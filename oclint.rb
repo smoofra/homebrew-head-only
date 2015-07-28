@@ -1,5 +1,5 @@
 class Oclint < Formula
-  desc "A clang-based static analyser for C, C++, and Objective C"
+  desc "A clang-based static analyser for C, C++, objC"
   homepage "http://oclint.org"
   ### doesn't build, I think because of some clang API change.x
   # url "http://archives.oclint.org/releases/0.8/oclint-0.8.1-src.tar.gz"
@@ -17,7 +17,7 @@ class Oclint < Formula
 
   def install
     # Homebrew llvm libc++.dylib doesn't correctly reexport libc++abi
-    ENV.append("LDFLAGS", '-lc++abi')
+    ENV.append("LDFLAGS", "-lc++abi")
 
     (buildpath/"oclint-xcodebuild").install resource("oclint-xcodebuild")
     bin.install "oclint-xcodebuild/oclint-xcodebuild"
@@ -25,6 +25,29 @@ class Oclint < Formula
     chdir "oclint-scripts" do
       system "sh", "./makeWithExternClang", "#{HOMEBREW_PREFIX}/opt/llvm"
     end
-    system "cp", "-a", "./build/oclint-release/", "#{prefix}/"
+    cp_r Dir["./build/oclint-release/*"], prefix
+  end
+
+  test do
+    mktemp do
+      File.open("foo.c", "w") do |f|
+        f.write(<<-END.undent)
+        int foo(int zaphod, int beeblebrox) {
+            return zaphod;
+        }
+        END
+      end
+      compile_commands = [
+        "directory" => Pathname.pwd.to_s,
+        "command" => "clang -c foo.c -o foo.o",
+        "file" => "foo.c"
+      ]
+      require "json"
+      File.open("compile_commands.json", "w") do |f|
+        f.write(JSON.generate(compile_commands))
+      end
+      assert_match /unused.*parameter.*beeblebrox/i,
+                   shell_output("#{bin}/oclint foo.c", 0)
+    end
   end
 end
