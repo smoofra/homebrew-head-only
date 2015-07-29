@@ -37,14 +37,12 @@ class Oclint < Formula
         }
         END
       end
-      compile_commands = [
-        "directory" => Pathname.pwd.to_s,
-        "command" => "clang -c foo.c -o foo.o",
-        "file" => "foo.c"
-      ]
-      require "json"
       File.open("compile_commands.json", "w") do |f|
-        f.write(JSON.generate(compile_commands))
+        f.write(<<-END.undent)
+          [{"directory": #{Pathname.pwd},
+            "command":  "clang -c foo.c -o foo.o",
+            "file":     "foo.c"}]
+          END
       end
       assert_match /unused.*parameter.*beeblebrox/i,
                    shell_output("#{bin}/oclint foo.c", 0)
