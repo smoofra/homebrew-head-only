@@ -1,12 +1,12 @@
 class Oclint < Formula
   desc "A clang-based static analyser for C, C++, objC"
   homepage "http://oclint.org"
-  ### doesn't build, I think because of some clang API change.x
-  # url "http://archives.oclint.org/releases/0.8/oclint-0.8.1-src.tar.gz"
-  # sha256 "fb6dab9ac619bacfea42e56469147cfc40e680642cedf352b87986c0bf1f7510"
+
+  ### oclint-0.8.1 doesn't build, I think because of some clang API changes.
 
   head do
     url "https://github.com/oclint/oclint.git"
+
     resource "oclint-xcodebuild" do
       url "https://github.com/oclint/oclint-xcodebuild.git"
     end
@@ -29,23 +29,17 @@ class Oclint < Formula
   end
 
   test do
-    mktemp do
-      File.open("foo.c", "w") do |f|
-        f.write(<<-END.undent)
-        int foo(int zaphod, int beeblebrox) {
-            return zaphod;
-        }
-        END
-      end
-      File.open("compile_commands.json", "w") do |f|
-        f.write(<<-END.undent)
-          [{"directory": #{Pathname.pwd},
-            "command":  "clang -c foo.c -o foo.o",
-            "file":     "foo.c"}]
-          END
-      end
-      assert_match /unused.*parameter.*beeblebrox/i,
-                   shell_output("#{bin}/oclint foo.c", 0)
-    end
+    (testpath/"foo.c").write(<<-END.undent)
+      int foo(int zaphod, int beeblebrox) {
+          return zaphod;
+      }
+      END
+    (testpath/"compile_commands.json").write(<<-END.undent)
+      [{"directory": "#{Pathname.pwd}",
+        "command":  "clang -c foo.c -o foo.o",
+        "file":     "foo.c"}]
+      END
+    assert_match /unused.*parameter.*beeblebrox/i,
+                 shell_output("#{bin}/oclint foo.c", 0)
   end
 end
